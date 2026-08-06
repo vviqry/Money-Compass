@@ -1,16 +1,22 @@
 {
   "short_name": "CashFlow",
-  "name": "CashFlow — Financial Behavior System",
-  "description": "Understand why your money disappears. A psychology-first financial behavior application.",
+  "name": "CashFlow — Money Compass",
+  "description": "Financial Behavior System — Understand why your money disappears.",
   "icons": [
     {
-      "src": "favicon.svg",
+      "src": "./favicon.svg",
       "type": "image/svg+xml",
       "sizes": "any",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "./favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512",
+      "purpose": "maskable"
     }
   ],
-  "start_url": "/",
+  "start_url": "./",
   "background_color": "#09090b",
   "theme_color": "#09090b",
   "display": "standalone",

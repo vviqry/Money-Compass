@@ -1,5 +1,6 @@
-import { Search, Plus } from 'lucide-react';
+import { Search, Plus, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/store/AuthContext';
 
 interface HeaderProps {
   onSearchOpen: () => void;
@@ -7,6 +8,7 @@ interface HeaderProps {
 }
 
 export function Header({ onSearchOpen, onQuickAdd }: HeaderProps) {
+  const { user, signOutUser } = useAuth();
   const hour = new Date().getHours();
   const greeting =
     hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
@@ -45,6 +47,33 @@ export function Header({ onSearchOpen, onQuickAdd }: HeaderProps) {
           <Plus className="w-4 h-4" />
           Quick Add
         </Button>
+
+        {/* User avatar + sign out */}
+        {user && (
+          <div className="flex items-center gap-1.5 pl-1">
+            {user.photoURL ? (
+              <img
+                src={user.photoURL}
+                alt={user.displayName ?? 'User'}
+                className="w-8 h-8 rounded-full border border-border/50"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-violet-500/20 flex items-center justify-center text-xs font-medium text-violet-600">
+                {(user.displayName ?? user.email ?? '?').charAt(0).toUpperCase()}
+              </div>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={signOutUser}
+              className="rounded-xl text-muted-foreground hover:text-foreground"
+              title="Keluar"
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
       </div>
     </header>
   );

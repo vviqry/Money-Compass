@@ -1,7 +1,9 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider } from '@/store/AppContext';
+import { AuthProvider, useAuth } from '@/store/AuthContext';
 import { AppShell } from '@/components/layout/AppShell';
+import LoginPage from '@/pages/LoginPage';
 
 // Lazy-loaded pages for code splitting
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
@@ -19,7 +21,21 @@ function LoadingFallback() {
   );
 }
 
-function App() {
+function AuthGate({ children }: { children: React.ReactNode }) {
+  const { user, isAuthLoading } = useAuth();
+
+  if (isAuthLoading) {
+    return <LoadingFallback />;
+  }
+
+  if (!user) {
+    return <LoginPage />;
+  }
+
+  return <>{children}</>;
+}
+
+function AppRoutes() {
   return (
     <AppProvider>
       <BrowserRouter>
@@ -77,6 +93,16 @@ function App() {
         </Routes>
       </BrowserRouter>
     </AppProvider>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AuthGate>
+        <AppRoutes />
+      </AuthGate>
+    </AuthProvider>
   );
 }
 

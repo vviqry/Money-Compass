@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { Transaction, Settings, Category } from '@/types';
+import { useAuth } from '@/store/AuthContext';
 import {
   getAllTransactions,
   addTransaction as dbAdd,
@@ -133,14 +134,22 @@ const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
+  const { user, isAuthLoading } = useAuth();
+  const uid = user?.uid;
 
-  // Hydrate from IndexedDB on mount
+  // Hydrate from Firestore whenever the logged-in user changes
   useEffect(() => {
-    async function hydrate() {
+    if (isAuthLoading) return;
+    if (!uid) {
+      dispatch({ type: 'HYDRATE', transactions: [], settings: DEFAULT_SETTINGS });
+      return;
+    }
+
+    async function hydrate(currentUid: string) {
       try {
         const [transactions, savedSettings] = await Promise.all([
-          getAllTransactions(),
-          getSettings(),
+          getAllTransactions(currentUid),
+          getSettings(currentUid),
         ]);
         const settings = savedSettings
           ? { ...DEFAULT_SETTINGS, ...savedSettings }
@@ -148,7 +157,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         // Save default settings if none exist
         if (!savedSettings) {
-          await dbSaveSettings(DEFAULT_SETTINGS);
+          await dbSaveSettings(currentUid, DEFAULT_SETTINGS);
         }
 
         dispatch({ type: 'HYDRATE', transactions, settings });
@@ -157,8 +166,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'HYDRATE', transactions: [], settings: DEFAULT_SETTINGS });
       }
     }
-    hydrate();
-  }, []);
+    hydrate(uid);
+  }, [uid, isAuthLoading]);
 
   // Apply theme
   useEffect(() => {
@@ -172,30 +181,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [state.settings.theme]);
 
   const addTransaction = useCallback(async (transaction: Transaction) => {
-    await dbAdd(transaction);
+    if (!uid) return;
+    await dbAdd(uid, transaction);
     dispatch({ type: 'ADD_TRANSACTION', transaction });
-  }, []);
+  }, [uid]);
 
   const updateTransactionFn = useCallback(async (id: string, changes: Partial<Transaction>) => {
-    await dbUpdate(id, changes);
+    if (!uid) return;
+    await dbUpdate(uid, id, changes);
     dispatch({ type: 'UPDATE_TRANSACTION', id, changes });
-  }, []);
+  }, [uid]);
 
   const deleteTransactionFn = useCallback(async (id: string) => {
-    await dbDelete(id);
+    if (!uid) return;
+    await dbDelete(uid, id);
     dispatch({ type: 'DELETE_TRANSACTION', id });
-  }, []);
+  }, [uid]);
 
   const updateSettingsFn = useCallback(async (settings: Partial<Settings>) => {
+    if (!uid) return;
     const newSettings = { ...state.settings, ...settings, updatedAt: new Date().toISOString() };
-    await dbSaveSettings(newSettings);
+    await dbSaveSettings(uid, newSettings);
     dispatch({ type: 'UPDATE_SETTINGS', settings });
-  }, [state.settings]);
+  }, [uid, state.settings]);
 
   const replaceAllAppData = useCallback(async (transactions: Transaction[], settings: Settings) => {
-    await replaceAllData(transactions, settings);
+    if (!uid) return;
+    await replaceAllData(uid, transactions, settings);
     dispatch({ type: 'REPLACE_ALL', transactions, settings });
-  }, []);
+  }, [uid]);
 
   const incomeCategories = state.categories.filter((c) => c.type === 'income');
   const expenseCategories = state.categories.filter((c) => c.type === 'expense');

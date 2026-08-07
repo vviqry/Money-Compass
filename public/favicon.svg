@@ -1,68 +1,38 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
   <defs>
-    <!-- Background Gradient -->
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1e1b4b" />
-      <stop offset="50%" stop-color="#0f172a" />
-      <stop offset="100%" stop-color="#09090b" />
+    <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#60a5fa" />
+      <stop offset="100%" stop-color="#2563eb" />
     </linearGradient>
-
-    <!-- Border Glow -->
-    <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.8" />
-      <stop offset="50%" stop-color="#6366f1" stop-opacity="0.3" />
-      <stop offset="100%" stop-color="#10b981" stop-opacity="0.8" />
+    <linearGradient id="coinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="100%" stop-color="#eab308" />
     </linearGradient>
-
-    <!-- Needle North (Green Glow) -->
-    <linearGradient id="needleNorth" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#10b981" />
-      <stop offset="100%" stop-color="#34d399" />
+    <linearGradient id="greenArrow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4ade80" />
+      <stop offset="100%" stop-color="#16a34a" />
     </linearGradient>
-
-    <!-- Needle South (Violet Glow) -->
-    <linearGradient id="needleSouth" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#6366f1" />
-      <stop offset="100%" stop-color="#8b5cf6" />
+    <linearGradient id="yellowArrow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#facc15" />
+      <stop offset="100%" stop-color="#ca8a04" />
     </linearGradient>
-
-    <!-- Inner Ring Glow -->
-    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.4" />
-      <stop offset="100%" stop-color="#34d399" stop-opacity="0.4" />
-    </linearGradient>
-
-    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="12" result="blur" />
-      <feComposite in="SourceGraphic" in2="blur" operator="over" />
-    </filter>
   </defs>
 
-  <!-- Background Squircle -->
-  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#bgGrad)" stroke="url(#borderGrad)" stroke-width="8" />
+  <!-- Blue Squircle Background -->
+  <rect width="512" height="512" rx="128" fill="url(#bg)" />
 
-  <!-- Outer Ring / Compass Dial -->
-  <circle cx="256" cy="256" r="160" fill="none" stroke="url(#ringGrad)" stroke-width="6" stroke-dasharray="8 8" />
+  <!-- Top Green Arrow Arc -->
+  <path d="M 140 256 A 120 120 0 0 1 370 180" fill="none" stroke="url(#greenArrow)" stroke-width="48" stroke-linecap="round" />
+  <polygon points="350,120 415,190 325,210" fill="url(#greenArrow)" />
 
-  <!-- Compass Marks -->
-  <!-- North Dot -->
-  <circle cx="256" cy="116" r="8" fill="#34d399" filter="url(#glow)" />
-  <!-- East Dot -->
-  <circle cx="396" cy="256" r="5" fill="#a78bfa" opacity="0.6" />
-  <!-- South Dot -->
-  <circle cx="256" cy="396" r="5" fill="#a78bfa" opacity="0.6" />
-  <!-- West Dot -->
-  <circle cx="116" cy="256" r="5" fill="#a78bfa" opacity="0.6" />
+  <!-- Bottom Yellow/Orange Arrow Arc -->
+  <path d="M 372 256 A 120 120 0 0 1 142 332" fill="none" stroke="url(#yellowArrow)" stroke-width="48" stroke-linecap="round" />
+  <polygon points="162,392 97,322 187,302" fill="url(#yellowArrow)" />
 
-  <!-- North East Needle (Pointing to Financial Growth at Top Right) -->
-  <polygon points="256,256 272,240 340,140 240,272" fill="url(#needleNorth)" filter="url(#glow)" />
-  <polygon points="256,256 240,272 172,372 272,240" fill="url(#needleSouth)" />
+  <!-- Center Gold Coin -->
+  <circle cx="256" cy="256" r="100" fill="url(#coinGrad)" stroke="#ca8a04" stroke-width="12" />
+  <circle cx="256" cy="256" r="82" fill="none" stroke="#fef08a" stroke-width="4" />
 
-  <!-- Shading detail on needle -->
-  <polygon points="256,256 340,140 272,240" fill="#ffffff" opacity="0.25" />
-  <polygon points="256,256 172,372 240,272" fill="#000000" opacity="0.2" />
-
-  <!-- Center Pin -->
-  <circle cx="256" cy="256" r="18" fill="#09090b" stroke="#ffffff" stroke-width="5" />
-  <circle cx="256" cy="256" r="7" fill="#34d399" />
+  <!-- "Rp" Text -->
+  <text x="256" y="285" font-family="sans-serif" font-weight="900" font-size="88" fill="#a16207" text-anchor="middle">Rp</text>
 </svg>

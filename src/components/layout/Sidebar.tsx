@@ -36,7 +36,7 @@ export function Sidebar() {
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 h-16 border-b border-border/50">
         <img
-          src="/logo.png"
+          src="/logo.jpeg"
           alt="CashFlow Logo"
           className="w-9 h-9 rounded-xl object-cover flex-shrink-0 shadow-md shadow-blue-500/20"
         />

@@ -19,7 +19,7 @@ export default function LoginPage() {
         className="w-full max-w-sm rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-8 text-center shadow-xl"
       >
         <img
-          src="/logo.png"
+          src="/logo.jpeg"
           alt="CashFlow Logo"
           className="mx-auto mb-4 h-14 w-14 rounded-2xl object-cover shadow-lg shadow-blue-500/20"
         />

@@ -4,27 +4,15 @@
   "description": "Financial Behavior System — Understand why your money disappears.",
   "icons": [
     {
-      "src": "./logo.png?v=4",
-      "type": "image/png",
-      "sizes": "192x192",
+      "src": "./logo.jpeg?v=5",
+      "type": "image/jpeg",
+      "sizes": "192x192 512x512",
       "purpose": "any"
     },
     {
-      "src": "./logo.png?v=4",
-      "type": "image/png",
-      "sizes": "512x512",
-      "purpose": "any"
-    },
-    {
-      "src": "./logo.png?v=4",
-      "type": "image/png",
-      "sizes": "192x192",
-      "purpose": "maskable"
-    },
-    {
-      "src": "./logo.png?v=4",
-      "type": "image/png",
-      "sizes": "512x512",
+      "src": "./logo.jpeg?v=5",
+      "type": "image/jpeg",
+      "sizes": "192x192 512x512",
       "purpose": "maskable"
     }
   ],

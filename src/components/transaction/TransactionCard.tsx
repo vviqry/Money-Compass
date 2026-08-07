@@ -77,9 +77,12 @@ export function TransactionCard({ transaction, onEdit, showDate = true }: Transa
     if (isDraggingRef.current) return;
     if (isOpen) {
       setOpenTransactionId(null);
-      return;
     }
-    onEdit?.(transaction);
+  };
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setOpenTransactionId(isOpen ? null : transaction.id);
   };
 
   const handleEdit = () => {
@@ -138,6 +141,7 @@ export function TransactionCard({ transaction, onEdit, showDate = true }: Transa
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         onClick={handleCardClick}
+        onContextMenu={handleContextMenu}
         transition={SNAP_SPRING}
         className="group relative z-10 flex items-center gap-4 p-4 rounded-2xl bg-card border border-border/50 hover:bg-accent/40 transition-colors cursor-pointer touch-pan-y select-none"
       >

@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion';
-import { Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/store/AuthContext';
 
@@ -19,9 +18,11 @@ export default function LoginPage() {
         transition={{ duration: 0.3 }}
         className="w-full max-w-sm rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-8 text-center shadow-xl"
       >
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/20">
-          <Wallet className="h-6 w-6" />
-        </div>
+        <img
+          src="/logo.png"
+          alt="CashFlow Logo"
+          className="mx-auto mb-4 h-14 w-14 rounded-2xl object-cover shadow-lg shadow-blue-500/20"
+        />
         <h1 className="text-xl font-semibold text-foreground">Money Compass</h1>
         <p className="mt-1.5 text-sm text-muted-foreground">
           Login untuk sinkronkan catatan keuangan lo di semua perangkat.

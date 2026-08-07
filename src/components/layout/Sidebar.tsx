@@ -10,7 +10,6 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Compass,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -36,9 +35,11 @@ export function Sidebar() {
     >
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 h-16 border-b border-border/50">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 via-indigo-600 to-emerald-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-violet-500/20">
-          <Compass className="w-5 h-5 text-white animate-pulse" />
-        </div>
+        <img
+          src="/logo.png"
+          alt="CashFlow Logo"
+          className="w-9 h-9 rounded-xl object-cover flex-shrink-0 shadow-md shadow-blue-500/20"
+        />
         <AnimatePresence>
           {!collapsed && (
             <motion.div

@@ -10,6 +10,7 @@ export interface Transaction {
   date: string; // ISO date string YYYY-MM-DD
   category: string;
   description: string;
+  notes?: string;
   attachment?: string; // base64 encoded
   type: TransactionType;
   createdAt: string; // ISO datetime
@@ -148,6 +149,7 @@ export const transactionSchema = z.object({
   date: z.string().min(1, 'Date is required'),
   category: z.string().min(1, 'Category is required'),
   description: z.string().min(1, 'Description is required').max(500, 'Too long'),
+  notes: z.string().max(1000, 'Too long').optional(),
   type: z.enum(['income', 'expense']),
   attachment: z.string().optional(),
 });

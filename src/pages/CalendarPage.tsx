@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { useApp } from '@/store/AppContext';
 import { CalendarEmpty } from '@/components/empty/EmptyState';
 import { TransactionCard } from '@/components/transaction/TransactionCard';
+import { TransactionForm } from '@/components/transaction/TransactionForm';
+import type { Transaction } from '@/types';
 import { formatCurrency, formatDate } from '@/lib/formatters';
 import {
   Sheet,
@@ -31,6 +33,7 @@ export default function CalendarPage() {
   const { transactions, settings } = useApp();
   const [year, setYear] = useState(new Date().getFullYear());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [editTx, setEditTx] = useState<Transaction | null>(null);
 
   // Build a map of dates -> { hasIncome, hasExpense }
   const dateMap = useMemo(() => {
@@ -136,7 +139,7 @@ export default function CalendarPage() {
               {selectedTransactions.length > 0 ? (
                 <div className="space-y-2">
                   {selectedTransactions.map((t) => (
-                    <TransactionCard key={t.id} transaction={t} showDate={false} />
+                    <TransactionCard key={t.id} transaction={t} onEdit={setEditTx} showDate={false} />
                   ))}
                 </div>
               ) : (
@@ -148,6 +151,14 @@ export default function CalendarPage() {
           )}
         </SheetContent>
       </Sheet>
+
+      {editTx && (
+        <TransactionForm
+          open={!!editTx}
+          onOpenChange={(open) => !open && setEditTx(null)}
+          editTransaction={editTx}
+        />
+      )}
     </motion.div>
   );
 }

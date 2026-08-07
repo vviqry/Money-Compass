@@ -57,6 +57,7 @@ export function TransactionForm({
           date: editTransaction.date,
           category: editTransaction.category,
           description: editTransaction.description,
+          notes: editTransaction.notes || '',
           type: editTransaction.type,
         }
       : {
@@ -64,6 +65,7 @@ export function TransactionForm({
           date: formatDateISO(),
           category: '',
           description: '',
+          notes: '',
           type: defaultType,
         },
   });
@@ -109,6 +111,7 @@ export function TransactionForm({
       date: formatDateISO(),
       category: '',
       description: '',
+      notes: '',
       type: defaultType,
     });
     onOpenChange(false);
@@ -258,6 +261,21 @@ export function TransactionForm({
               />
               {errors.description && (
                 <p className="text-destructive text-xs mt-1">{errors.description.message}</p>
+              )}
+            </div>
+
+            {/* Notes */}
+            <div>
+              <Label htmlFor="notes" className="text-sm font-medium">Notes <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Textarea
+                id="notes"
+                placeholder="Any extra details..."
+                className="mt-1.5 rounded-xl resize-none"
+                rows={2}
+                {...register('notes')}
+              />
+              {errors.notes && (
+                <p className="text-destructive text-xs mt-1">{errors.notes.message}</p>
               )}
             </div>
 

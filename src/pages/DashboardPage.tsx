@@ -1,10 +1,14 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useDashboardStats } from '@/hooks/useStatistics';
 import { useApp } from '@/store/AppContext';
 import { useOutletContext } from 'react-router-dom';
 import { formatCurrency } from '@/lib/formatters';
 import { TransactionCard } from '@/components/transaction/TransactionCard';
+import { TransactionForm } from '@/components/transaction/TransactionForm';
+import { OverviewChart } from '@/components/dashboard/OverviewChart';
 import { DashboardEmpty } from '@/components/empty/EmptyState';
+import type { Transaction } from '@/types';
 import {
   Wallet,
   TrendingUp,
@@ -16,16 +20,6 @@ import {
   Plus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
-import { useStatistics } from '@/hooks/useStatistics';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -46,9 +40,9 @@ const itemVariants = {
 
 export default function DashboardPage() {
   const dashStats = useDashboardStats();
-  const { stats } = useStatistics('monthly');
   const { transactions, settings } = useApp();
   const { onQuickAdd } = useOutletContext<{ onQuickAdd: (type?: 'income' | 'expense') => void }>();
+  const [editTx, setEditTx] = useState<Transaction | null>(null);
 
   if (transactions.length === 0) {
     return <DashboardEmpty onAction={() => onQuickAdd()} />;
@@ -125,57 +119,8 @@ export default function DashboardPage() {
       </div>
 
       {/* Chart */}
-      <motion.div
-        variants={itemVariants}
-        className="rounded-2xl bg-card/50 border border-border/50 backdrop-blur-sm p-5"
-      >
-        <h3 className="text-sm font-medium text-muted-foreground mb-4">Monthly Overview</h3>
-        <div className="h-48 md:h-56">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={stats.trendData}>
-              <defs>
-                <linearGradient id="incomeGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis hide />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'var(--card)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '12px',
-                  fontSize: '13px',
-                }}
-              />
-              <Area
-                type="monotone"
-                dataKey="income"
-                stroke="#10b981"
-                strokeWidth={2}
-                fill="url(#incomeGrad)"
-              />
-              <Area
-                type="monotone"
-                dataKey="expense"
-                stroke="#ef4444"
-                strokeWidth={2}
-                fill="url(#expenseGrad)"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
+      <motion.div variants={itemVariants}>
+        <OverviewChart />
       </motion.div>
 
       {/* Recent Transactions */}
@@ -192,10 +137,18 @@ export default function DashboardPage() {
         </div>
         <div className="space-y-2">
           {dashStats.recentTransactions.map((t) => (
-            <TransactionCard key={t.id} transaction={t} />
+            <TransactionCard key={t.id} transaction={t} onEdit={setEditTx} />
           ))}
         </div>
       </motion.div>
+
+      {editTx && (
+        <TransactionForm
+          open={!!editTx}
+          onOpenChange={(open) => !open && setEditTx(null)}
+          editTransaction={editTx}
+        />
+      )}
 
       {/* Mobile FAB */}
       <motion.button

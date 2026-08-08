@@ -30,6 +30,7 @@ interface TransactionFormProps {
   onOpenChange: (open: boolean) => void;
   defaultType?: 'income' | 'expense';
   editTransaction?: Transaction;
+  duplicateTransaction?: Transaction;
 }
 
 export function TransactionForm({
@@ -37,6 +38,7 @@ export function TransactionForm({
   onOpenChange,
   defaultType = 'expense',
   editTransaction,
+  duplicateTransaction,
 }: TransactionFormProps) {
   const { addTransaction, updateTransaction, settings } = useApp();
   const [showInvestigation, setShowInvestigation] = useState(false);
@@ -59,6 +61,15 @@ export function TransactionForm({
           description: editTransaction.description,
           notes: editTransaction.notes || '',
           type: editTransaction.type,
+        }
+      : duplicateTransaction
+      ? {
+          amount: duplicateTransaction.amount,
+          date: formatDateISO(),
+          category: duplicateTransaction.category,
+          description: duplicateTransaction.description,
+          notes: duplicateTransaction.notes || '',
+          type: duplicateTransaction.type,
         }
       : {
           amount: undefined,
@@ -131,7 +142,11 @@ export function TransactionForm({
         <SheetContent side="bottom" className="rounded-t-3xl max-h-[90vh] overflow-y-auto">
           <SheetHeader className="pb-4">
             <SheetTitle className="text-xl">
-              {editTransaction ? 'Edit Transaction' : 'Add Transaction'}
+              {editTransaction
+                ? 'Edit Transaction'
+                : duplicateTransaction
+                ? 'Duplicate Transaction'
+                : 'Add Transaction'}
             </SheetTitle>
           </SheetHeader>
 

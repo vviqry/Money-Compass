@@ -6,7 +6,7 @@ import {
   animate,
   type PanInfo,
 } from 'framer-motion';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Copy, Trash2 } from 'lucide-react';
 import type { Transaction } from '@/types';
 import { useApp } from '@/store/AppContext';
 import { formatCurrency, formatDate, getRelativeTime } from '@/lib/formatters';
@@ -18,14 +18,15 @@ import { useIsTransactionOpen, setOpenTransactionId } from '@/store/swipeStore';
 interface TransactionCardProps {
   transaction: Transaction;
   onEdit?: (transaction: Transaction) => void;
+  onDuplicate?: (transaction: Transaction) => void;
   showDate?: boolean;
 }
 
-const ACTION_WIDTH = 152; // combined width of the revealed Edit + Delete buttons
+const ACTION_WIDTH = 228; // combined width of revealed Edit + Duplicate + Delete buttons
 const OPEN_THRESHOLD = ACTION_WIDTH / 2;
 const SNAP_SPRING = { type: 'spring' as const, stiffness: 520, damping: 34, mass: 0.6 };
 
-export function TransactionCard({ transaction, onEdit, showDate = true }: TransactionCardProps) {
+export function TransactionCard({ transaction, onEdit, onDuplicate, showDate = true }: TransactionCardProps) {
   const { deleteTransaction, settings } = useApp();
   const isIncome = transaction.type === 'income';
   const isOpen = useIsTransactionOpen(transaction.id);
@@ -90,6 +91,11 @@ export function TransactionCard({ transaction, onEdit, showDate = true }: Transa
     onEdit?.(transaction);
   };
 
+  const handleDuplicate = () => {
+    setOpenTransactionId(null);
+    onDuplicate?.(transaction);
+  };
+
   const handleDeleteConfirm = () => {
     setOpenTransactionId(null);
     deleteTransaction(transaction.id);
@@ -118,6 +124,15 @@ export function TransactionCard({ transaction, onEdit, showDate = true }: Transa
         >
           <Pencil className="w-4 h-4" />
           Edit
+        </button>
+        <button
+          type="button"
+          onClick={handleDuplicate}
+          tabIndex={isOpen ? 0 : -1}
+          className="w-[76px] flex flex-col items-center justify-center gap-1 bg-violet-600 text-white text-xs font-medium active:brightness-90 transition-[filter]"
+        >
+          <Copy className="w-4 h-4" />
+          Duplicate
         </button>
         <button
           type="button"

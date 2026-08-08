@@ -34,6 +34,7 @@ export default function CalendarPage() {
   const [year, setYear] = useState(new Date().getFullYear());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [editTx, setEditTx] = useState<Transaction | null>(null);
+  const [duplicateTx, setDuplicateTx] = useState<Transaction | null>(null);
 
   // Build a map of dates -> { hasIncome, hasExpense }
   const dateMap = useMemo(() => {
@@ -139,7 +140,13 @@ export default function CalendarPage() {
               {selectedTransactions.length > 0 ? (
                 <div className="space-y-2">
                   {selectedTransactions.map((t) => (
-                    <TransactionCard key={t.id} transaction={t} onEdit={setEditTx} showDate={false} />
+                    <TransactionCard
+                      key={t.id}
+                      transaction={t}
+                      onEdit={setEditTx}
+                      onDuplicate={setDuplicateTx}
+                      showDate={false}
+                    />
                   ))}
                 </div>
               ) : (
@@ -157,6 +164,14 @@ export default function CalendarPage() {
           open={!!editTx}
           onOpenChange={(open) => !open && setEditTx(null)}
           editTransaction={editTx}
+        />
+      )}
+
+      {duplicateTx && (
+        <TransactionForm
+          open={!!duplicateTx}
+          onOpenChange={(open) => !open && setDuplicateTx(null)}
+          duplicateTransaction={duplicateTx}
         />
       )}
     </motion.div>

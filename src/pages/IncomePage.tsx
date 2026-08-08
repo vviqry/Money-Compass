@@ -14,6 +14,7 @@ export default function IncomePage() {
   const { transactions, settings } = useApp();
   const { onQuickAdd } = useOutletContext<{ onQuickAdd: (type?: 'income' | 'expense') => void }>();
   const [editTx, setEditTx] = useState<Transaction | null>(null);
+  const [duplicateTx, setDuplicateTx] = useState<Transaction | null>(null);
 
   const incomeTransactions = transactions.filter((t) => t.type === 'income');
   const totalIncome = incomeTransactions.reduce((sum, t) => sum + t.amount, 0);
@@ -82,6 +83,7 @@ export default function IncomePage() {
                     key={t.id}
                     transaction={t}
                     onEdit={setEditTx}
+                    onDuplicate={setDuplicateTx}
                     showDate={false}
                   />
                 ))}
@@ -96,6 +98,14 @@ export default function IncomePage() {
           open={!!editTx}
           onOpenChange={(open) => !open && setEditTx(null)}
           editTransaction={editTx}
+        />
+      )}
+
+      {duplicateTx && (
+        <TransactionForm
+          open={!!duplicateTx}
+          onOpenChange={(open) => !open && setDuplicateTx(null)}
+          duplicateTransaction={duplicateTx}
         />
       )}
     </div>

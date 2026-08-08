@@ -43,6 +43,7 @@ export default function DashboardPage() {
   const { transactions, settings } = useApp();
   const { onQuickAdd } = useOutletContext<{ onQuickAdd: (type?: 'income' | 'expense') => void }>();
   const [editTx, setEditTx] = useState<Transaction | null>(null);
+  const [duplicateTx, setDuplicateTx] = useState<Transaction | null>(null);
 
   if (transactions.length === 0) {
     return <DashboardEmpty onAction={() => onQuickAdd()} />;
@@ -137,7 +138,12 @@ export default function DashboardPage() {
         </div>
         <div className="space-y-2">
           {dashStats.recentTransactions.map((t) => (
-            <TransactionCard key={t.id} transaction={t} onEdit={setEditTx} />
+            <TransactionCard
+              key={t.id}
+              transaction={t}
+              onEdit={setEditTx}
+              onDuplicate={setDuplicateTx}
+            />
           ))}
         </div>
       </motion.div>
@@ -147,6 +153,14 @@ export default function DashboardPage() {
           open={!!editTx}
           onOpenChange={(open) => !open && setEditTx(null)}
           editTransaction={editTx}
+        />
+      )}
+
+      {duplicateTx && (
+        <TransactionForm
+          open={!!duplicateTx}
+          onOpenChange={(open) => !open && setDuplicateTx(null)}
+          duplicateTransaction={duplicateTx}
         />
       )}
 

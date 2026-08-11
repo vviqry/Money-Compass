@@ -9,9 +9,10 @@ import {
   query,
   where,
   orderBy,
+  onSnapshot,
 } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase';
-import type { Transaction, Settings } from '@/types';
+import type { Transaction, Settings, WishlistItem, RevenueStream } from '@/types';
 
 // ─── Data Layout ─────────────────────────────────────────────────────
 // users/{uid}/transactions/{transactionId}
@@ -115,4 +116,72 @@ export async function exportAllData(uid: string) {
   const transactions = await getAllTransactions(uid);
   const settings = await getSettings(uid);
   return { transactions, settings };
+}
+
+// ─── Wishlist Operations (Pengungkit Produktivitas & Kekayaan) ───────
+
+function wishlistCol(uid: string) {
+  return collection(firestore, 'users', uid, 'wishlist');
+}
+
+export async function addWishlistItem(uid: string, item: WishlistItem): Promise<void> {
+  await setDoc(doc(wishlistCol(uid), item.id), item);
+}
+
+export async function updateWishlistItem(
+  uid: string,
+  id: string,
+  changes: Partial<WishlistItem>
+): Promise<void> {
+  const updatedAt = new Date().toISOString();
+  await setDoc(doc(wishlistCol(uid), id), { ...changes, updatedAt }, { merge: true });
+}
+
+export async function deleteWishlistItem(uid: string, id: string): Promise<void> {
+  await deleteDoc(doc(wishlistCol(uid), id));
+}
+
+export function subscribeWishlist(
+  uid: string,
+  callback: (items: WishlistItem[]) => void
+): () => void {
+  const q = query(wishlistCol(uid), orderBy('createdAt', 'desc'));
+  return onSnapshot(q, (snapshot) => {
+    const items = snapshot.docs.map((d) => d.data() as WishlistItem);
+    callback(items);
+  });
+}
+
+// ─── Revenue Stream Operations (Reminder & Management) ──────────────
+
+function revenueStreamsCol(uid: string) {
+  return collection(firestore, 'users', uid, 'revenue_streams');
+}
+
+export async function addRevenueStream(uid: string, stream: RevenueStream): Promise<void> {
+  await setDoc(doc(revenueStreamsCol(uid), stream.id), stream);
+}
+
+export async function updateRevenueStream(
+  uid: string,
+  id: string,
+  changes: Partial<RevenueStream>
+): Promise<void> {
+  const updatedAt = new Date().toISOString();
+  await setDoc(doc(revenueStreamsCol(uid), id), { ...changes, updatedAt }, { merge: true });
+}
+
+export async function deleteRevenueStream(uid: string, id: string): Promise<void> {
+  await deleteDoc(doc(revenueStreamsCol(uid), id));
+}
+
+export function subscribeRevenueStreams(
+  uid: string,
+  callback: (streams: RevenueStream[]) => void
+): () => void {
+  const q = query(revenueStreamsCol(uid), orderBy('createdAt', 'desc'));
+  return onSnapshot(q, (snapshot) => {
+    const streams = snapshot.docs.map((d) => d.data() as RevenueStream);
+    callback(streams);
+  });
 }

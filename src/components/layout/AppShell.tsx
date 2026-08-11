@@ -7,11 +7,17 @@ import { Header } from './Header';
 import { SearchDialog } from '@/components/search/SearchDialog';
 import { TransactionForm } from '@/components/transaction/TransactionForm';
 import { CalendarFAB } from '@/components/calendar/CalendarFAB';
+import { WishlistFAB } from '@/components/layout/WishlistFAB';
+import { RevenueFAB } from '@/components/layout/RevenueFAB';
+import { WishlistModal } from '@/components/wishlist/WishlistModal';
+import { RevenueModal } from '@/components/revenue/RevenueModal';
 
 export function AppShell() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [quickAddType, setQuickAddType] = useState<'income' | 'expense'>('expense');
+  const [wishlistOpen, setWishlistOpen] = useState(false);
+  const [revenueOpen, setRevenueOpen] = useState(false);
 
   const handleQuickAdd = (type?: 'income' | 'expense') => {
     setQuickAddType(type || 'expense');
@@ -53,8 +59,14 @@ export function AppShell() {
       {/* Mobile nav */}
       <MobileNav />
 
-      {/* Calendar FAB */}
+      {/* Floating Action Buttons (stacked: Revenue > Wishlist > Calendar) */}
+      <RevenueFAB open={revenueOpen} onToggle={() => setRevenueOpen(!revenueOpen)} />
+      <WishlistFAB open={wishlistOpen} onToggle={() => setWishlistOpen(!wishlistOpen)} />
       <CalendarFAB />
+
+      {/* Modals */}
+      <WishlistModal open={wishlistOpen} onClose={() => setWishlistOpen(false)} />
+      <RevenueModal open={revenueOpen} onClose={() => setRevenueOpen(false)} />
 
       {/* Search */}
       <SearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
@@ -68,3 +80,4 @@ export function AppShell() {
     </div>
   );
 }
+

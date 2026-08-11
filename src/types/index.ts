@@ -175,3 +175,37 @@ export const settingsSchema = z.object({
   theme: z.enum(['dark', 'light', 'system']),
   highRiskCategories: z.array(z.string()),
 });
+
+// ─── Wishlist Types (Pengungkit Produktivitas & Kekayaan) ────────────
+
+export interface WishlistItem {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  imageUrl: string;
+  link: string;
+  createdAt: string; // ISO datetime
+  updatedAt: string; // ISO datetime
+}
+
+// ─── Revenue Stream Types (Reminder & Management) ───────────────────
+
+export type RevenueStreamCategory =
+  | 'Gaji'
+  | 'Affiliate'
+  | 'Freelance'
+  | 'Bisnis'
+  | 'Investasi'
+  | 'Lainnya';
+
+export interface RevenueStream {
+  id: string;
+  name: string;
+  category: RevenueStreamCategory;
+  amount: number;
+  notes: string;
+  color: string;
+  createdAt: string; // ISO datetime
+  updatedAt: string; // ISO datetime
+}

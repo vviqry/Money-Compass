@@ -29,6 +29,7 @@ interface TransactionFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultType?: 'income' | 'expense';
+  defaultCategory?: string;
   editTransaction?: Transaction;
   duplicateTransaction?: Transaction;
 }
@@ -37,6 +38,7 @@ export function TransactionForm({
   open,
   onOpenChange,
   defaultType = 'expense',
+  defaultCategory = '',
   editTransaction,
   duplicateTransaction,
 }: TransactionFormProps) {
@@ -74,7 +76,7 @@ export function TransactionForm({
       : {
           amount: undefined,
           date: formatDateISO(),
-          category: '',
+          category: defaultCategory,
           description: '',
           notes: '',
           type: defaultType,
@@ -100,16 +102,21 @@ export function TransactionForm({
 
   const saveTransaction = async (data: TransactionFormData, investigationData?: Transaction['investigationData']) => {
     const now = new Date().toISOString();
+    const isDebt = data.category === 'Hutang';
 
     if (editTransaction) {
       await updateTransaction(editTransaction.id, {
         ...data,
+        isDebt: isDebt ? true : (editTransaction.isDebt ?? false),
+        debtStatus: isDebt ? (editTransaction.debtStatus || 'BELUM_LUNAS') : editTransaction.debtStatus,
         updatedAt: now,
       });
     } else {
       const transaction: Transaction = {
         id: generateId(),
         ...data,
+        isDebt: isDebt ? true : false,
+        debtStatus: isDebt ? 'BELUM_LUNAS' : undefined,
         createdAt: now,
         updatedAt: now,
         investigationData,
@@ -120,7 +127,7 @@ export function TransactionForm({
     reset({
       amount: undefined,
       date: formatDateISO(),
-      category: '',
+      category: defaultCategory,
       description: '',
       notes: '',
       type: defaultType,

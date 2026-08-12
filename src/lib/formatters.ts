@@ -103,3 +103,10 @@ export function formatTransactionAmount(
 export function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 }
+
+// ─── Debt Transaction Check ──────────────────────────────────────────
+
+export function isDebtTransaction(t: { isDebt?: boolean; category?: string } | null | undefined): boolean {
+  if (!t) return false;
+  return Boolean(t.isDebt === true || t.category === 'Hutang');
+}

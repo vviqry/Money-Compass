@@ -16,6 +16,7 @@ import {
   Briefcase,
   Monitor,
   Heart,
+  HandCoins,
   type LucideProps,
 } from 'lucide-react';
 import type { ReactElement } from 'react';
@@ -37,6 +38,8 @@ const iconMap: Record<string, (props: LucideProps) => ReactElement> = {
   'Business Capital': (props) => <Briefcase {...props} />,
   'Digital Product': (props) => <Monitor {...props} />,
   Donation: (props) => <Heart {...props} />,
+  Hutang: (props) => <HandCoins {...props} />,
+  Debt: (props) => <HandCoins {...props} />,
   Other: (props) => <MoreHorizontal {...props} />,
 };
 

@@ -9,19 +9,31 @@ import { TransactionForm } from '@/components/transaction/TransactionForm';
 import { CalendarFAB } from '@/components/calendar/CalendarFAB';
 import { WishlistFAB } from '@/components/layout/WishlistFAB';
 import { RevenueFAB } from '@/components/layout/RevenueFAB';
+import { DebtFAB } from '@/components/layout/DebtFAB';
 import { WishlistModal } from '@/components/wishlist/WishlistModal';
 import { RevenueModal } from '@/components/revenue/RevenueModal';
+import { DebtModal } from '@/components/debt/DebtModal';
+import type { Transaction } from '@/types';
 
 export function AppShell() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [quickAddType, setQuickAddType] = useState<'income' | 'expense'>('expense');
+  const [quickAddCategory, setQuickAddCategory] = useState<string>('');
   const [wishlistOpen, setWishlistOpen] = useState(false);
   const [revenueOpen, setRevenueOpen] = useState(false);
+  const [debtOpen, setDebtOpen] = useState(false);
+  const [editTx, setEditTx] = useState<Transaction | null>(null);
+  const [duplicateTx, setDuplicateTx] = useState<Transaction | null>(null);
 
-  const handleQuickAdd = (type?: 'income' | 'expense') => {
+  const handleQuickAdd = (type?: 'income' | 'expense', category?: string) => {
     setQuickAddType(type || 'expense');
+    setQuickAddCategory(category || '');
     setQuickAddOpen(true);
+  };
+
+  const handleAddDebt = () => {
+    handleQuickAdd('expense', 'Hutang');
   };
 
   return (
@@ -59,12 +71,20 @@ export function AppShell() {
       {/* Mobile nav */}
       <MobileNav />
 
-      {/* Floating Action Buttons (stacked: Revenue > Wishlist > Calendar) */}
+      {/* Floating Action Buttons (stacked: Debt > Revenue > Wishlist > Calendar) */}
+      <DebtFAB open={debtOpen} onToggle={() => setDebtOpen(!debtOpen)} />
       <RevenueFAB open={revenueOpen} onToggle={() => setRevenueOpen(!revenueOpen)} />
       <WishlistFAB open={wishlistOpen} onToggle={() => setWishlistOpen(!wishlistOpen)} />
       <CalendarFAB />
 
       {/* Modals */}
+      <DebtModal
+        open={debtOpen}
+        onClose={() => setDebtOpen(false)}
+        onAddDebt={handleAddDebt}
+        onEditTransaction={setEditTx}
+        onDuplicateTransaction={setDuplicateTx}
+      />
       <WishlistModal open={wishlistOpen} onClose={() => setWishlistOpen(false)} />
       <RevenueModal open={revenueOpen} onClose={() => setRevenueOpen(false)} />
 
@@ -76,8 +96,26 @@ export function AppShell() {
         open={quickAddOpen}
         onOpenChange={setQuickAddOpen}
         defaultType={quickAddType}
+        defaultCategory={quickAddCategory}
       />
+
+      {/* Edit Form */}
+      {editTx && (
+        <TransactionForm
+          open={!!editTx}
+          onOpenChange={(open) => !open && setEditTx(null)}
+          editTransaction={editTx}
+        />
+      )}
+
+      {/* Duplicate Form */}
+      {duplicateTx && (
+        <TransactionForm
+          open={!!duplicateTx}
+          onOpenChange={(open) => !open && setDuplicateTx(null)}
+          duplicateTransaction={duplicateTx}
+        />
+      )}
     </div>
   );
 }
-

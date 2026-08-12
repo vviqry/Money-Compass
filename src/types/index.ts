@@ -16,6 +16,10 @@ export interface Transaction {
   createdAt: string; // ISO datetime
   updatedAt: string; // ISO datetime
   investigationData?: InvestigationData;
+  isDebt?: boolean;
+  debtStatus?: 'BELUM_LUNAS' | 'LUNAS';
+  linkedExpenseId?: string; // Reference to generated settlement expense transaction
+  relatedDebtId?: string; // Reference to original debt transaction (for settlement expenses)
 }
 
 // ─── Category Types ──────────────────────────────────────────────────

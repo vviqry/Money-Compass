@@ -6,10 +6,17 @@ import {
   animate,
   type PanInfo,
 } from 'framer-motion';
-import { Pencil, Copy, Trash2 } from 'lucide-react';
+import { Pencil, Copy, Trash2, CheckCircle2, Clock } from 'lucide-react';
 import type { Transaction } from '@/types';
 import { useApp } from '@/store/AppContext';
-import { formatCurrency, formatDate, getRelativeTime } from '@/lib/formatters';
+import {
+  formatCurrency,
+  formatDate,
+  getRelativeTime,
+  isDebtTransaction,
+  generateId,
+  formatDateISO,
+} from '@/lib/formatters';
 import { cn } from '@/lib/utils';
 import { getCategoryIcon } from '@/components/transaction/CategoryIcon';
 import { DeleteTransactionDialog } from '@/components/transaction/DeleteTransactionDialog';
@@ -22,34 +29,37 @@ interface TransactionCardProps {
   showDate?: boolean;
 }
 
-const ACTION_WIDTH = 228; // combined width of revealed Edit + Duplicate + Delete buttons
-const OPEN_THRESHOLD = ACTION_WIDTH / 2;
 const SNAP_SPRING = { type: 'spring' as const, stiffness: 520, damping: 34, mass: 0.6 };
 
-export function TransactionCard({ transaction, onEdit, onDuplicate, showDate = true }: TransactionCardProps) {
-  const { deleteTransaction, settings } = useApp();
+export function TransactionCard({
+  transaction,
+  onEdit,
+  onDuplicate,
+  showDate = true,
+}: TransactionCardProps) {
+  const { transactions, addTransaction, updateTransaction, deleteTransaction, settings } = useApp();
   const isIncome = transaction.type === 'income';
+  const isDebt = isDebtTransaction(transaction);
+  const isLunas = transaction.debtStatus === 'LUNAS';
+
+  const actionWidth = isDebt ? 312 : 228;
+  const openThreshold = actionWidth / 2;
+
   const isOpen = useIsTransactionOpen(transaction.id);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
 
-  // The card's horizontal offset — driven directly by the gesture, so
-  // dragging never triggers a React re-render of this card or its siblings.
   const x = useMotionValue(0);
-  const actionsOpacity = useTransform(x, [-ACTION_WIDTH, -OPEN_THRESHOLD, 0], [1, 0.6, 0]);
-  const actionsScale = useTransform(x, [-ACTION_WIDTH, -OPEN_THRESHOLD, 0], [1, 0.88, 0.88]);
+  const actionsOpacity = useTransform(x, [-actionWidth, -openThreshold, 0], [1, 0.6, 0]);
+  const actionsScale = useTransform(x, [-actionWidth, -openThreshold, 0], [1, 0.88, 0.88]);
 
-  // Single source of truth lives in the swipe store — if another card opens,
-  // or something closes this one externally, animate to match with a
-  // springy, slightly overshooting "release" feel.
   useEffect(() => {
-    const controls = animate(x, isOpen ? -ACTION_WIDTH : 0, SNAP_SPRING);
+    const controls = animate(x, isOpen ? -actionWidth : 0, SNAP_SPRING);
     return () => controls.stop();
-  }, [isOpen, x]);
+  }, [isOpen, actionWidth, x]);
 
-  // Tapping anywhere outside the open card closes it.
   useEffect(() => {
     if (!isOpen) return;
     function handlePointerDown(e: PointerEvent) {
@@ -66,9 +76,8 @@ export function TransactionCard({ transaction, onEdit, onDuplicate, showDate = t
   };
 
   const handleDragEnd = (_event: PointerEvent | MouseEvent | TouchEvent, info: PanInfo) => {
-    const shouldOpen = info.offset.x < -OPEN_THRESHOLD || info.velocity.x < -400;
+    const shouldOpen = info.offset.x < -openThreshold || info.velocity.x < -400;
     setOpenTransactionId(shouldOpen ? transaction.id : null);
-    // Let the click handler see isDraggingRef first; reset shortly after.
     setTimeout(() => {
       isDraggingRef.current = false;
     }, 60);
@@ -86,6 +95,50 @@ export function TransactionCard({ transaction, onEdit, onDuplicate, showDate = t
     setOpenTransactionId(isOpen ? null : transaction.id);
   };
 
+  const handleToggleLunas = async () => {
+    setOpenTransactionId(null);
+    const now = new Date().toISOString();
+
+    if (!isLunas) {
+      // Mark as Lunas & generate a new settlement expense transaction
+      const settlementId = generateId();
+      const settlementTx: Transaction = {
+        id: settlementId,
+        amount: transaction.amount,
+        date: formatDateISO(),
+        category: 'Other',
+        description: `Pelunasan: ${transaction.description}`,
+        type: 'expense',
+        createdAt: now,
+        updatedAt: now,
+        isDebt: false,
+        relatedDebtId: transaction.id,
+      };
+
+      await addTransaction(settlementTx);
+      await updateTransaction(transaction.id, {
+        isDebt: true,
+        debtStatus: 'LUNAS',
+        linkedExpenseId: settlementId,
+      });
+    } else {
+      // Toggle back to Belum Lunas & delete generated settlement expense
+      const linkedExpense = transactions.find(
+        (t) => t.relatedDebtId === transaction.id || (transaction.linkedExpenseId && t.id === transaction.linkedExpenseId)
+      );
+
+      if (linkedExpense) {
+        await deleteTransaction(linkedExpense.id);
+      }
+
+      await updateTransaction(transaction.id, {
+        isDebt: true,
+        debtStatus: 'BELUM_LUNAS',
+        linkedExpenseId: undefined,
+      });
+    }
+  };
+
   const handleEdit = () => {
     setOpenTransactionId(null);
     onEdit?.(transaction);
@@ -96,9 +149,18 @@ export function TransactionCard({ transaction, onEdit, onDuplicate, showDate = t
     onDuplicate?.(transaction);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     setOpenTransactionId(null);
-    deleteTransaction(transaction.id);
+    // If it's a debt card with a linked settlement expense, delete that as well
+    if (isDebt) {
+      const linkedExpense = transactions.find(
+        (t) => t.relatedDebtId === transaction.id || (transaction.linkedExpenseId && t.id === transaction.linkedExpenseId)
+      );
+      if (linkedExpense) {
+        await deleteTransaction(linkedExpense.id);
+      }
+    }
+    await deleteTransaction(transaction.id);
   };
 
   return (
@@ -110,12 +172,23 @@ export function TransactionCard({ transaction, onEdit, onDuplicate, showDate = t
       exit={{ opacity: 0, x: -100 }}
       className="relative rounded-2xl overflow-hidden"
     >
-      {/* Revealed swipe actions (sit behind the card, only visible once dragged) */}
+      {/* Revealed swipe actions */}
       <motion.div
         style={{ opacity: actionsOpacity, scale: actionsScale }}
         className="absolute inset-y-0 right-0 flex items-stretch"
         aria-hidden={!isOpen}
       >
+        {isDebt && (
+          <button
+            type="button"
+            onClick={handleToggleLunas}
+            tabIndex={isOpen ? 0 : -1}
+            className="w-[84px] flex flex-col items-center justify-center gap-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold active:brightness-90 transition-all shadow-inner"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            {isLunas ? 'Belum Lunas' : 'Lunas'}
+          </button>
+        )}
         <button
           type="button"
           onClick={handleEdit}
@@ -149,7 +222,7 @@ export function TransactionCard({ transaction, onEdit, onDuplicate, showDate = t
       <motion.div
         style={{ x }}
         drag="x"
-        dragConstraints={{ left: -ACTION_WIDTH, right: 0 }}
+        dragConstraints={{ left: -actionWidth, right: 0 }}
         dragElastic={{ left: 0.15, right: 0.4 }}
         dragMomentum={false}
         whileDrag={{ scale: 0.98 }}
@@ -164,7 +237,9 @@ export function TransactionCard({ transaction, onEdit, onDuplicate, showDate = t
         <div
           className={cn(
             'w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0',
-            isIncome
+            isDebt
+              ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+              : isIncome
               ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
               : 'bg-red-500/10 text-red-600 dark:text-red-400'
           )}
@@ -174,7 +249,20 @@ export function TransactionCard({ transaction, onEdit, onDuplicate, showDate = t
 
         {/* Details */}
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-foreground truncate">{transaction.description}</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-medium text-foreground truncate">{transaction.description}</p>
+            {isDebt && (
+              isLunas ? (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
+                  <CheckCircle2 className="w-3 h-3" /> Lunas
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 shrink-0">
+                  <Clock className="w-3 h-3" /> Belum Lunas
+                </span>
+              )
+            )}
+          </div>
           <p className="text-xs text-muted-foreground mt-0.5">
             {transaction.category}
             {showDate && ` · ${getRelativeTime(transaction.createdAt)}`}
@@ -186,7 +274,11 @@ export function TransactionCard({ transaction, onEdit, onDuplicate, showDate = t
           <p
             className={cn(
               'font-bold',
-              isIncome ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'
+              isDebt
+                ? 'text-rose-600 dark:text-rose-400'
+                : isIncome
+                ? 'text-emerald-600 dark:text-emerald-400'
+                : 'text-red-500 dark:text-red-400'
             )}
           >
             {isIncome ? '+' : '-'}

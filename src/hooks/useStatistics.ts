@@ -17,7 +17,7 @@ import {
   parseISO,
   isWithinInterval,
 } from 'date-fns';
-import { isDateToday, isDateThisMonth } from '@/lib/formatters';
+import { isDateToday, isDateThisMonth, isDebtTransaction } from '@/lib/formatters';
 
 // ─── Main Statistics Hook ────────────────────────────────────────────
 
@@ -27,7 +27,7 @@ export function useStatistics(period: StatsPeriod = 'monthly') {
   const stats = useMemo<StatsData>(() => {
     const filtered = filterByPeriod(transactions, period);
     const income = filtered.filter((t) => t.type === 'income');
-    const expense = filtered.filter((t) => t.type === 'expense');
+    const expense = filtered.filter((t) => t.type === 'expense' && !isDebtTransaction(t));
 
     const totalIncome = income.reduce((sum, t) => sum + t.amount, 0);
     const totalExpense = expense.reduce((sum, t) => sum + t.amount, 0);
@@ -98,7 +98,7 @@ export function useDashboardStats() {
       .reduce((sum, t) => sum + t.amount, 0);
 
     const todayExpense = transactions
-      .filter((t) => t.type === 'expense' && isDateToday(t.date))
+      .filter((t) => t.type === 'expense' && !isDebtTransaction(t) && isDateToday(t.date))
       .reduce((sum, t) => sum + t.amount, 0);
 
     const monthlyIncome = transactions
@@ -106,7 +106,7 @@ export function useDashboardStats() {
       .reduce((sum, t) => sum + t.amount, 0);
 
     const monthlyExpense = transactions
-      .filter((t) => t.type === 'expense' && isDateThisMonth(t.date))
+      .filter((t) => t.type === 'expense' && !isDebtTransaction(t) && isDateThisMonth(t.date))
       .reduce((sum, t) => sum + t.amount, 0);
 
     const totalIncome = transactions
@@ -114,7 +114,7 @@ export function useDashboardStats() {
       .reduce((sum, t) => sum + t.amount, 0);
 
     const totalExpense = transactions
-      .filter((t) => t.type === 'expense')
+      .filter((t) => t.type === 'expense' && !isDebtTransaction(t))
       .reduce((sum, t) => sum + t.amount, 0);
 
     const balance = totalIncome - totalExpense;
@@ -122,7 +122,7 @@ export function useDashboardStats() {
 
     // Largest expense category this month
     const monthlyExpenses = transactions.filter(
-      (t) => t.type === 'expense' && isDateThisMonth(t.date)
+      (t) => t.type === 'expense' && !isDebtTransaction(t) && isDateThisMonth(t.date)
     );
     const categoryTotals = new Map<string, number>();
     monthlyExpenses.forEach((t) => {
@@ -307,7 +307,7 @@ function computeTrendData(transactions: Transaction[], period: StatsPeriod): Tre
     return {
       label: format(date, formatStr),
       income: dayTransactions.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0),
-      expense: dayTransactions.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0),
+      expense: dayTransactions.filter((t) => t.type === 'expense' && !isDebtTransaction(t)).reduce((s, t) => s + t.amount, 0),
       date: dateStr,
     };
   });

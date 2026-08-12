@@ -25,6 +25,7 @@ export const DEFAULT_EXPENSE_CATEGORIES: Category[] = [
   { id: 'exp-business', name: 'Business Capital', type: 'expense', icon: 'Briefcase', isHighRisk: false, isCustom: false, color: '#0d9488' },
   { id: 'exp-digital', name: 'Digital Product', type: 'expense', icon: 'Monitor', isHighRisk: true, isCustom: false, color: '#dc2626' },
   { id: 'exp-donation', name: 'Donation', type: 'expense', icon: 'Heart', isHighRisk: false, isCustom: false, color: '#e11d48' },
+  { id: 'exp-hutang', name: 'Hutang', type: 'expense', icon: 'HandCoins', isHighRisk: false, isCustom: false, color: '#f43f5e' },
   { id: 'exp-other', name: 'Other', type: 'expense', icon: 'MoreHorizontal', isHighRisk: false, isCustom: false, color: '#6b7280' },
 ];
 

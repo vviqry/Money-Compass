@@ -25,11 +25,26 @@ function WishlistItemCard({
   onDelete: (id: string) => void;
 }) {
   const [localItem, setLocalItem] = useState(item);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const adjustTextareaHeight = useCallback(() => {
+    const el = textareaRef.current;
+    if (el) {
+      el.style.height = 'auto';
+      el.style.height = `${el.scrollHeight}px`;
+    }
+  }, []);
 
   useEffect(() => {
     setLocalItem(item);
-  }, [item]);
+    adjustTextareaHeight();
+  }, [item, adjustTextareaHeight]);
+
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [localItem.description, adjustTextareaHeight]);
 
   const handleChange = (field: keyof WishlistItem, value: string | number) => {
     const updated = { ...localItem, [field]: value };
@@ -74,16 +89,6 @@ function WishlistItemCard({
 
   return (
     <div className="relative flex gap-4 p-4 rounded-xl border border-border/50 bg-gradient-to-r from-amber-500/5 to-orange-500/5 group">
-      {/* Delete button */}
-      <button
-        onClick={() => {
-          if (confirm('Hapus target ini?')) onDelete(item.id);
-        }}
-        className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center text-xs hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-sm"
-      >
-        <X className="w-3.5 h-3.5" />
-      </button>
-
       {/* Left Thumbnail */}
       <div
         className={`w-16 h-16 rounded-full shrink-0 flex items-center justify-center cursor-pointer overflow-hidden ${localItem.imageUrl ? '' : 'border-2 border-dashed border-border/50'}`}
@@ -111,24 +116,50 @@ function WishlistItemCard({
             placeholder="Judul target..."
             className="w-full bg-transparent border-none p-0 focus:ring-0 font-semibold text-foreground placeholder:text-muted-foreground focus:outline-none"
           />
-          <button
-            onClick={handleLinkClick}
-            className="shrink-0 p-1 hover:bg-white/10 rounded"
-            title={localItem.link || 'Tambahkan link'}
-          >
-            <ExternalLink
-              className={`w-4 h-4 ${localItem.link ? 'text-amber-500' : 'text-muted-foreground'}`}
-            />
-          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={handleLinkClick}
+              className="p-1 hover:bg-white/10 rounded text-muted-foreground hover:text-foreground transition-colors"
+              title={localItem.link || 'Tambahkan link'}
+            >
+              <ExternalLink
+                className={`w-4 h-4 ${localItem.link ? 'text-amber-500' : 'text-muted-foreground'}`}
+              />
+            </button>
+
+            {/* Subtle 2-step Delete Button */}
+            {isConfirmingDelete ? (
+              <button
+                onClick={() => onDelete(item.id)}
+                onMouseLeave={() => setIsConfirmingDelete(false)}
+                className="w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center text-xs shadow-md transition-all"
+                title="Klik sekali lagi untuk menghapus"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            ) : (
+              <button
+                onClick={() => setIsConfirmingDelete(true)}
+                className="p-1 text-muted-foreground/30 hover:text-red-500 hover:bg-red-500/10 rounded-full transition-all"
+                title="Hapus target"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
         </div>
 
         <textarea
+          ref={textareaRef}
           value={localItem.description}
-          onChange={(e) => handleChange('description', e.target.value)}
+          onChange={(e) => {
+            handleChange('description', e.target.value);
+            adjustTextareaHeight();
+          }}
           onBlur={() => handleBlur('description')}
           placeholder="Deskripsi..."
-          rows={Math.max(2, (localItem.description || '').split('\n').length)}
-          className="w-full bg-transparent border-none p-0 focus:ring-0 text-sm text-muted-foreground placeholder:text-muted-foreground/50 focus:outline-none whitespace-pre-wrap break-words resize-none leading-relaxed"
+          rows={1}
+          className="w-full bg-transparent border-none p-0 focus:ring-0 text-sm text-muted-foreground placeholder:text-muted-foreground/50 focus:outline-none whitespace-pre-wrap break-words resize-none overflow-hidden leading-relaxed"
         />
 
         <div className="flex items-center gap-1 mt-1">

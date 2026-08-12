@@ -122,13 +122,13 @@ function WishlistItemCard({
           </button>
         </div>
 
-        <input
-          type="text"
+        <textarea
           value={localItem.description}
           onChange={(e) => handleChange('description', e.target.value)}
           onBlur={() => handleBlur('description')}
           placeholder="Deskripsi..."
-          className="w-full bg-transparent border-none p-0 focus:ring-0 text-sm text-muted-foreground placeholder:text-muted-foreground/50 focus:outline-none"
+          rows={Math.max(2, (localItem.description || '').split('\n').length)}
+          className="w-full bg-transparent border-none p-0 focus:ring-0 text-sm text-muted-foreground placeholder:text-muted-foreground/50 focus:outline-none whitespace-pre-wrap break-words resize-none leading-relaxed"
         />
 
         <div className="flex items-center gap-1 mt-1">
@@ -211,7 +211,7 @@ export function WishlistModal({ open, onClose }: WishlistModalProps) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-            className="relative w-full max-w-md bg-card border border-border/50 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]"
+            className="relative w-full max-w-[calc(100vw-2rem)] md:max-w-3xl md:w-[720px] bg-card border border-border/50 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
           >
             {/* Header */}
             <div className="p-4 border-b border-border/50 flex items-center gap-2 shrink-0">

@@ -18,7 +18,7 @@ export function DebtFAB({ onToggle }: DebtFABProps) {
   return (
     <motion.button
       onClick={onToggle}
-      className="fixed bottom-72 md:bottom-56 right-6 z-40 w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-xl shadow-rose-500/30 flex items-center justify-center relative"
+      className="fixed bottom-72 md:bottom-56 right-6 z-40 w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-xl shadow-rose-500/30 flex items-center justify-center"
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       initial={{ scale: 0, opacity: 0 }}

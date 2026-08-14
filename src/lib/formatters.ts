@@ -110,3 +110,57 @@ export function isDebtTransaction(t: { isDebt?: boolean; category?: string } | n
   if (!t) return false;
   return Boolean(t.isDebt === true || t.category === 'Hutang');
 }
+
+// ─── Debt Person Helpers ─────────────────────────────────────────────
+
+export function getDebtPerson(
+  t: { debtPerson?: string; category?: string; description?: string } | null | undefined
+): string {
+  if (!t) return 'Belum Dikategorikan';
+
+  if (t.debtPerson && t.debtPerson.trim().length > 0) {
+    return t.debtPerson.trim();
+  }
+
+  // Deterministic matching for known existing legacy transactions
+  const desc = t.description || '';
+  if (/\bUmmy\b/i.test(desc)) {
+    return 'Ummy';
+  }
+  if (/\bDiah\b/i.test(desc)) {
+    return 'Diah';
+  }
+
+  // Safe pattern fallback extraction for "Hutang ka/ke/kepada [Nama]"
+  const match = desc.match(/(?:hutang\s+(?:ka|ke|kepada)\s+)([A-Za-z0-9\-_]+)/i);
+  if (match && match[1]) {
+    const extracted = match[1].trim();
+    return extracted.charAt(0).toUpperCase() + extracted.slice(1);
+  }
+
+  return 'Belum Dikategorikan';
+}
+
+export function getUniqueDebtPersons(
+  transactions: { category?: string; isDebt?: boolean; debtPerson?: string; description?: string }[],
+  customPersons: string[] = []
+): string[] {
+  const personsSet = new Set<string>();
+
+  // Add custom registered persons from settings first
+  customPersons.forEach((p) => {
+    if (p && p.trim()) personsSet.add(p.trim());
+  });
+
+  // Extract from all debt transactions
+  transactions
+    .filter((t) => isDebtTransaction(t))
+    .forEach((t) => {
+      const person = getDebtPerson(t);
+      if (person && person !== 'Belum Dikategorikan') {
+        personsSet.add(person);
+      }
+    });
+
+  return Array.from(personsSet).sort((a, b) => a.localeCompare(b));
+}

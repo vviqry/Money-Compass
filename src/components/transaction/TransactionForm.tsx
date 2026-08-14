@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,13 +15,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useApp } from '@/store/AppContext';
 import { transactionSchema, type TransactionFormData, type Transaction } from '@/types';
-import { generateId, formatDateISO } from '@/lib/formatters';
+import { generateId, formatDateISO, getDebtPerson, getUniqueDebtPersons } from '@/lib/formatters';
 import { DEFAULT_INCOME_CATEGORIES, DEFAULT_EXPENSE_CATEGORIES } from '@/lib/constants';
 import { InvestigationModal } from '@/components/investigation/InvestigationModal';
 import {
   TrendingUp,
   TrendingDown,
   AlertTriangle,
+  User,
+  Plus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -42,9 +44,15 @@ export function TransactionForm({
   editTransaction,
   duplicateTransaction,
 }: TransactionFormProps) {
-  const { addTransaction, updateTransaction, settings } = useApp();
+  const { transactions, addTransaction, updateTransaction, updateSettings, settings } = useApp();
   const [showInvestigation, setShowInvestigation] = useState(false);
   const [pendingTransaction, setPendingTransaction] = useState<TransactionFormData | null>(null);
+
+  const initialDebtPerson = editTransaction
+    ? (editTransaction.debtPerson || getDebtPerson(editTransaction))
+    : duplicateTransaction
+    ? (duplicateTransaction.debtPerson || getDebtPerson(duplicateTransaction))
+    : '';
 
   const {
     register,
@@ -63,6 +71,7 @@ export function TransactionForm({
           description: editTransaction.description,
           notes: editTransaction.notes || '',
           type: editTransaction.type,
+          debtPerson: initialDebtPerson,
         }
       : duplicateTransaction
       ? {
@@ -72,6 +81,7 @@ export function TransactionForm({
           description: duplicateTransaction.description,
           notes: duplicateTransaction.notes || '',
           type: duplicateTransaction.type,
+          debtPerson: initialDebtPerson,
         }
       : {
           amount: undefined,
@@ -80,14 +90,20 @@ export function TransactionForm({
           description: '',
           notes: '',
           type: defaultType,
+          debtPerson: '',
         },
   });
 
   const selectedType = watch('type');
   const selectedCategory = watch('category');
+  const selectedDebtPerson = watch('debtPerson') || '';
   const categories = selectedType === 'income' ? DEFAULT_INCOME_CATEGORIES : DEFAULT_EXPENSE_CATEGORIES;
 
   const isHighRisk = settings.highRiskCategories.includes(selectedCategory);
+
+  const knownPersons = useMemo(() => {
+    return getUniqueDebtPersons(transactions, settings.customDebtPersons || ['Ummy', 'Diah']);
+  }, [transactions, settings.customDebtPersons]);
 
   const onSubmit = async (data: TransactionFormData) => {
     // Check if category is high risk
@@ -103,11 +119,15 @@ export function TransactionForm({
   const saveTransaction = async (data: TransactionFormData, investigationData?: Transaction['investigationData']) => {
     const now = new Date().toISOString();
     const isDebt = data.category === 'Hutang';
+    const cleanDebtPerson = isDebt
+      ? (data.debtPerson?.trim() || 'Belum Dikategorikan')
+      : undefined;
 
     if (editTransaction) {
       await updateTransaction(editTransaction.id, {
         ...data,
         isDebt: isDebt ? true : (editTransaction.isDebt ?? false),
+        debtPerson: cleanDebtPerson,
         debtStatus: isDebt ? (editTransaction.debtStatus || 'BELUM_LUNAS') : editTransaction.debtStatus,
         updatedAt: now,
       });
@@ -116,12 +136,23 @@ export function TransactionForm({
         id: generateId(),
         ...data,
         isDebt: isDebt ? true : false,
+        debtPerson: cleanDebtPerson,
         debtStatus: isDebt ? 'BELUM_LUNAS' : undefined,
         createdAt: now,
         updatedAt: now,
         investigationData,
       };
       await addTransaction(transaction);
+    }
+
+    // Save newly entered debt person to settings custom list if valid
+    if (isDebt && cleanDebtPerson && cleanDebtPerson !== 'Belum Dikategorikan') {
+      const currentCustom = settings.customDebtPersons || [];
+      if (!currentCustom.includes(cleanDebtPerson)) {
+        await updateSettings({
+          customDebtPersons: [...currentCustom, cleanDebtPerson],
+        });
+      }
     }
 
     reset({
@@ -131,6 +162,7 @@ export function TransactionForm({
       description: '',
       notes: '',
       type: defaultType,
+      debtPerson: '',
     });
     onOpenChange(false);
   };
@@ -256,6 +288,72 @@ export function TransactionForm({
                 </motion.div>
               )}
             </div>
+
+            {/* Hutang Kepada (Conditional for Category === "Hutang") */}
+            {selectedCategory === 'Hutang' && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="space-y-2.5 p-4 rounded-2xl bg-rose-500/5 border border-rose-500/20"
+              >
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="debtPerson" className="text-sm font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
+                    <User className="w-4 h-4" />
+                    Hutang Kepada
+                  </Label>
+                  <span className="text-[11px] text-muted-foreground">Pilih atau ketik nama orang</span>
+                </div>
+
+                {/* Quick select chips */}
+                <div className="flex flex-wrap gap-1.5">
+                  {knownPersons.map((person) => {
+                    const isSelected = selectedDebtPerson.toLowerCase() === person.toLowerCase();
+                    return (
+                      <button
+                        key={person}
+                        type="button"
+                        onClick={() => {
+                          setValue('debtPerson', person);
+                        }}
+                        className={cn(
+                          'px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border',
+                          isSelected
+                            ? 'bg-rose-600 text-white border-rose-600 shadow-sm shadow-rose-500/30'
+                            : 'bg-card border-border/50 text-foreground hover:border-rose-500/40 hover:bg-rose-500/10'
+                        )}
+                      >
+                        {person}
+                      </button>
+                    );
+                  })}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setValue('debtPerson', '');
+                    }}
+                    className="px-2.5 py-1.5 rounded-xl text-xs font-medium border border-dashed border-rose-500/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-all flex items-center gap-1"
+                  >
+                    <Plus className="w-3 h-3" />
+                    Nama Baru
+                  </button>
+                </div>
+
+                {/* Input text field for person name */}
+                <div>
+                  <Input
+                    id="debtPerson"
+                    type="text"
+                    placeholder="Masukkan nama orang (misal: Ummy, Diah, Ayah...)"
+                    className="rounded-xl border-rose-500/30 focus-visible:ring-rose-500"
+                    {...register('debtPerson')}
+                  />
+                  {errors.debtPerson && (
+                    <p className="text-destructive text-xs mt-1">{errors.debtPerson.message}</p>
+                  )}
+                </div>
+              </motion.div>
+            )}
 
             {/* Date */}
             <div>

@@ -20,6 +20,7 @@ export interface Transaction {
   debtStatus?: 'BELUM_LUNAS' | 'LUNAS';
   linkedExpenseId?: string; // Reference to generated settlement expense transaction
   relatedDebtId?: string; // Reference to original debt transaction (for settlement expenses)
+  debtPerson?: string; // Person/creditor identity (e.g. "Ummy", "Diah")
 }
 
 // ─── Category Types ──────────────────────────────────────────────────
@@ -80,6 +81,7 @@ export interface Settings {
   locale: string;
   theme: ThemeMode;
   highRiskCategories: string[];
+  customDebtPersons?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -156,6 +158,7 @@ export const transactionSchema = z.object({
   notes: z.string().max(1000, 'Too long').optional(),
   type: z.enum(['income', 'expense']),
   attachment: z.string().optional(),
+  debtPerson: z.string().optional(),
 });
 
 export type TransactionFormData = z.infer<typeof transactionSchema>;
@@ -178,6 +181,7 @@ export const settingsSchema = z.object({
   locale: z.string().min(1),
   theme: z.enum(['dark', 'light', 'system']),
   highRiskCategories: z.array(z.string()),
+  customDebtPersons: z.array(z.string()).optional(),
 });
 
 // ─── Wishlist Types (Pengungkit Produktivitas & Kekayaan) ────────────

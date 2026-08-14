@@ -14,6 +14,7 @@ import {
   formatDate,
   getRelativeTime,
   isDebtTransaction,
+  getDebtPerson,
   generateId,
   formatDateISO,
 } from '@/lib/formatters';
@@ -41,6 +42,7 @@ export function TransactionCard({
   const isIncome = transaction.type === 'income';
   const isDebt = isDebtTransaction(transaction);
   const isLunas = transaction.debtStatus === 'LUNAS';
+  const debtPerson = isDebt ? getDebtPerson(transaction) : null;
 
   const actionWidth = isDebt ? 312 : 228;
   const openThreshold = actionWidth / 2;
@@ -263,9 +265,14 @@ export function TransactionCard({
               )
             )}
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {transaction.category}
-            {showDate && ` · ${getRelativeTime(transaction.createdAt)}`}
+          <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1 flex-wrap">
+            {isDebt && debtPerson && debtPerson !== 'Belum Dikategorikan' && (
+              <span className="inline-flex items-center px-1.5 py-0.2 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 font-semibold text-[11px]">
+                Kepada: {debtPerson}
+              </span>
+            )}
+            <span>{transaction.category}</span>
+            {showDate && <span>· {getRelativeTime(transaction.createdAt)}</span>}
           </p>
         </div>
 

@@ -6,7 +6,7 @@ import {
   animate,
   type PanInfo,
 } from 'framer-motion';
-import { Pencil, Copy, Trash2, CheckCircle2, Clock } from 'lucide-react';
+import { Pencil, Copy, Trash2, CheckCircle2, Clock, Loader2 } from 'lucide-react';
 import type { Transaction } from '@/types';
 import { useApp } from '@/store/AppContext';
 import {
@@ -15,8 +15,6 @@ import {
   getRelativeTime,
   isDebtTransaction,
   getDebtPerson,
-  generateId,
-  formatDateISO,
 } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
 import { getCategoryIcon } from '@/components/transaction/CategoryIcon';
@@ -38,7 +36,7 @@ export function TransactionCard({
   onDuplicate,
   showDate = true,
 }: TransactionCardProps) {
-  const { transactions, addTransaction, updateTransaction, deleteTransaction, settings } = useApp();
+  const { updateTransaction, deleteTransaction, settings } = useApp();
   const isIncome = transaction.type === 'income';
   const isDebt = isDebtTransaction(transaction);
   const isLunas = transaction.debtStatus === 'LUNAS';
@@ -49,6 +47,7 @@ export function TransactionCard({
 
   const isOpen = useIsTransactionOpen(transaction.id);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
@@ -97,47 +96,27 @@ export function TransactionCard({
     setOpenTransactionId(isOpen ? null : transaction.id);
   };
 
-  const handleToggleLunas = async () => {
-    setOpenTransactionId(null);
-    const now = new Date().toISOString();
+  const handleToggleLunas = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    if (isUpdating) return;
 
-    if (!isLunas) {
-      // Mark as Lunas & generate a new settlement expense transaction
-      const settlementId = generateId();
-      const settlementTx: Transaction = {
-        id: settlementId,
-        amount: transaction.amount,
-        date: formatDateISO(),
-        category: 'Other',
-        description: `Pelunasan: ${transaction.description}`,
-        type: 'expense',
-        createdAt: now,
-        updatedAt: now,
-        isDebt: false,
-        relatedDebtId: transaction.id,
-      };
-
-      await addTransaction(settlementTx);
+    setIsUpdating(true);
+    try {
+      const nextStatus = isLunas ? 'BELUM_LUNAS' : 'LUNAS';
+      // In-place liability status update on the existing document only:
+      // Does NOT create new expense, does NOT alter balance, does NOT mutate transaction amount/id.
       await updateTransaction(transaction.id, {
         isDebt: true,
-        debtStatus: 'LUNAS',
-        linkedExpenseId: settlementId,
+        debtStatus: nextStatus,
       });
-    } else {
-      // Toggle back to Belum Lunas & delete generated settlement expense
-      const linkedExpense = transactions.find(
-        (t) => t.relatedDebtId === transaction.id || (transaction.linkedExpenseId && t.id === transaction.linkedExpenseId)
-      );
-
-      if (linkedExpense) {
-        await deleteTransaction(linkedExpense.id);
-      }
-
-      await updateTransaction(transaction.id, {
-        isDebt: true,
-        debtStatus: 'BELUM_LUNAS',
-        linkedExpenseId: undefined,
-      });
+    } catch (error) {
+      console.error('Failed to update debt status:', error);
+    } finally {
+      setIsUpdating(false);
+      setOpenTransactionId(null);
     }
   };
 
@@ -153,15 +132,6 @@ export function TransactionCard({
 
   const handleDeleteConfirm = async () => {
     setOpenTransactionId(null);
-    // If it's a debt card with a linked settlement expense, delete that as well
-    if (isDebt) {
-      const linkedExpense = transactions.find(
-        (t) => t.relatedDebtId === transaction.id || (transaction.linkedExpenseId && t.id === transaction.linkedExpenseId)
-      );
-      if (linkedExpense) {
-        await deleteTransaction(linkedExpense.id);
-      }
-    }
     await deleteTransaction(transaction.id);
   };
 
@@ -183,12 +153,25 @@ export function TransactionCard({
         {isDebt && (
           <button
             type="button"
-            onClick={handleToggleLunas}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleToggleLunas(e);
+            }}
+            disabled={isUpdating}
             tabIndex={isOpen ? 0 : -1}
-            className="w-[84px] flex flex-col items-center justify-center gap-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold active:brightness-90 transition-all shadow-inner"
+            className="w-[84px] flex flex-col items-center justify-center gap-1 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white text-xs font-semibold active:brightness-90 transition-all shadow-inner"
           >
-            <CheckCircle2 className="w-4 h-4" />
-            {isLunas ? 'Belum Lunas' : 'Lunas'}
+            {isUpdating ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Memproses...</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="w-4 h-4" />
+                <span>{isLunas ? 'Belum Lunas' : 'Lunas'}</span>
+              </>
+            )}
           </button>
         )}
         <button
@@ -254,14 +237,36 @@ export function TransactionCard({
           <div className="flex items-center gap-2 flex-wrap">
             <p className="font-medium text-foreground truncate">{transaction.description}</p>
             {isDebt && (
-              isLunas ? (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
-                  <CheckCircle2 className="w-3 h-3" /> Lunas
-                </span>
+              isUpdating ? (
+                <button
+                  type="button"
+                  disabled
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                  }}
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-muted text-muted-foreground border border-border/50 shrink-0 cursor-wait animate-pulse"
+                >
+                  <Loader2 className="w-3 h-3 animate-spin" /> Memproses...
+                </button>
+              ) : isLunas ? (
+                <button
+                  type="button"
+                  onClick={(e) => handleToggleLunas(e)}
+                  title="Klik untuk ubah menjadi Belum Lunas"
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 active:scale-95 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shrink-0 transition-all cursor-pointer shadow-xs"
+                >
+                  <CheckCircle2 className="w-3 h-3" /> Lunas ✓
+                </button>
               ) : (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 shrink-0">
+                <button
+                  type="button"
+                  onClick={(e) => handleToggleLunas(e)}
+                  title="Klik untuk tandai Lunas"
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/15 hover:bg-rose-500/25 active:scale-95 text-rose-600 dark:text-rose-400 border border-rose-500/30 shrink-0 transition-all cursor-pointer shadow-xs"
+                >
                   <Clock className="w-3 h-3" /> Belum Lunas
-                </span>
+                </button>
               )
             )}
           </div>

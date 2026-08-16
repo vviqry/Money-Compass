@@ -49,11 +49,6 @@ export function DebtModal({
   );
 
   // Dynamic Total calculations
-  const totalAllDebt = useMemo(
-    () => debtTransactions.reduce((sum, t) => sum + t.amount, 0),
-    [debtTransactions]
-  );
-
   const totalUnpaid = useMemo(
     () =>
       debtTransactions
@@ -115,7 +110,7 @@ export function DebtModal({
         name,
         ...data,
       }))
-      .sort((a, b) => b.total - a.total);
+      .sort((a, b) => (b.unpaid !== a.unpaid ? b.unpaid - a.unpaid : b.total - a.total));
   }, [debtTransactions, uniquePersons]);
 
   // Filtered transactions for the Rincian list
@@ -213,7 +208,7 @@ export function DebtModal({
                 <div className="relative z-10">
                   <div className="flex items-center justify-between">
                     <span className="text-xs uppercase tracking-wider font-semibold text-rose-100/80">
-                      TOTAL HUTANG
+                      TOTAL HUTANG AKTIF
                     </span>
                     <span className="px-2.5 py-1 rounded-full bg-white/15 text-[11px] font-bold backdrop-blur-md">
                       {unpaidCount} Belum Lunas
@@ -221,7 +216,7 @@ export function DebtModal({
                   </div>
 
                   <h3 className="text-2xl sm:text-4xl font-extrabold tracking-tight mt-1.5 mb-4">
-                    {fmt(totalAllDebt)}
+                    {fmt(totalUnpaid)}
                   </h3>
 
                   <div className="grid grid-cols-2 gap-3 pt-3 border-t border-white/20">
@@ -324,6 +319,7 @@ export function DebtModal({
                   {personStats.map((person) => {
                     const isSelected =
                       selectedPerson?.toLowerCase() === person.name.toLowerCase();
+                    const hasUnpaid = person.unpaid > 0;
                     return (
                       <motion.button
                         key={person.name}
@@ -345,14 +341,24 @@ export function DebtModal({
                           </span>
                         </div>
                         <div className="flex items-baseline justify-between w-full">
-                          <span className="text-base font-extrabold text-rose-600 dark:text-rose-400">
-                            {fmt(person.total)}
+                          <span
+                            className={`text-base font-extrabold ${
+                              hasUnpaid
+                                ? 'text-rose-600 dark:text-rose-400'
+                                : 'text-emerald-600 dark:text-emerald-400'
+                            }`}
+                          >
+                            {fmt(person.unpaid)}
                           </span>
-                          {isSelected && (
+                          {isSelected ? (
                             <span className="text-[10px] font-bold text-rose-500 uppercase tracking-wider">
                               Aktif
                             </span>
-                          )}
+                          ) : !hasUnpaid && person.count > 0 ? (
+                            <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                              Lunas ✓
+                            </span>
+                          ) : null}
                         </div>
                       </motion.button>
                     );
